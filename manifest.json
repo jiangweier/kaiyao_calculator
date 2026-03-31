@@ -2,7 +2,7 @@
   "name": "开药计算器",
   "short_name": "开药计算",
   "description": "帮助医生计算开药数量的工具",
-  "start_url": "./开药计算器_v2.0.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4a90d9",

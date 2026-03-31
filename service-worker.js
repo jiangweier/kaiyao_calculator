@@ -1,6 +1,6 @@
 const CACHE_NAME = 'kaiyao-calculator-v2';
 const urlsToCache = [
-  './开药计算器_v2.0.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
