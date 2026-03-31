@@ -13,6 +13,8 @@
 
 - 已配置 GitHub 远程仓库：https://github.com/jiangweier/kaiyao_calculator.git
 - 已完成 Git 初始化及首次推送
+- 已部署 GitHub Pages：https://jiangweier.github.io/kaiyao_calculator/
+- 主文件名：`index.html`（v2.0）
 
 ## 技术细节
 
