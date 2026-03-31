@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>开药计算器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .calculator {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 32px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 24px; color: #333; }
+    .mode-switch { display: flex; gap: 8px; margin-bottom: 24px; }
+    .mode-btn {
+      flex: 1; padding: 10px; border: 2px solid #e0e0e0; background: white;
+      border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s;
+    }
+    .mode-btn.active { border-color: #4a90d9; background: #f0f7ff; color: #4a90d9; font-weight: 600; }
+    .input-group { margin-bottom: 16px; }
+    label { display: block; font-size: 14px; color: #666; margin-bottom: 6px; }
+    input[type="number"], input[type="date"] {
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;
+    }
+    input:focus { outline: none; border-color: #4a90d9; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .checkbox-group label { margin-bottom: 0; cursor: pointer; font-size: 14px; color: #666; }
+    .row { display: flex; gap: 12px; }
+    .row .input-group { flex: 1; }
+    .result { margin-top: 24px; }
+    .result-section { margin-bottom: 20px; padding: 16px; background: #f0f7ff; border-radius: 12px; }
+    .result-section:last-child { margin-bottom: 0; }
+    .result-title {
+      font-size: 13px; color: #999; margin-bottom: 12px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .result-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+    .result-item:last-child { border-bottom: none; }
+    .result-label { color: #666; font-size: 14px; }
+    .result-value { font-size: 16px; font-weight: 600; color: #333; }
+    .result-value.highlight { color: #4a90d9; }
+    .result-value.success { color: #27ae60; }
+    .timeline { margin-top: 16px; }
+    .timeline-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e0e0e0; }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-badge {
+      width: 28px; height: 28px; border-radius: 50%; background: #4a90d9;
+      color: white; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .timeline-badge.last { background: #27ae60; }
+    .timeline-content { flex: 1; }
+    .timeline-date { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 4px; }
+    .timeline-detail { font-size: 13px; color: #666; }
+    .timeline-warning {
+      background: #fff3cd; border-radius: 8px; padding: 12px;
+      margin-top: 16px; font-size: 13px; color: #856404;
+    }
+    .info {
+      margin-top: 20px; padding: 12px; background: #fff9e6; border-radius: 8px;
+      font-size: 13px; color: #8b6914; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <h1>开药计算器</h1>
+
+    <div class="mode-switch">
+      <button class="mode-btn active" data-mode="by-days">按天数计算</button>
+      <button class="mode-btn" data-mode="by-date">按日期计算</button>
+    </div>
+
+    <div class="input-group">
+      <label>本次问诊日期</label>
+      <input type="date" id="visitDate">
+    </div>
+
+    <div class="row">
+      <div class="input-group">
+        <label>剩余药粒数</label>
+        <input type="number" id="remainingPills" min="0" value="0">
+      </div>
+      <div class="input-group">
+        <label>每日剂量（粒）</label>
+        <input type="number" id="dailyDose" min="1" value="2">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="input-group">
+        <label>每盒药粒数</label>
+        <input type="number" id="pillsPerBox" min="1" value="28">
+      </div>
+      <div class="input-group">
+        <label>最长开药天数</label>
+        <input type="number" id="maxDays" min="1" value="60">
+      </div>
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="takeOnVisitDay">
+      <label for="takeOnVisitDay">问诊当天服用新开的药</label>
+    </div>
+
+    <div class="input-group" id="daysInputGroup">
+      <label>本次开药天数</label>
+      <input type="number" id="prescribeDays" min="1" placeholder="输入天数">
+    </div>
+
+    <div class="input-group" id="nextDateInputGroup" style="display:none;">
+      <label>计划下次问诊日期</label>
+      <input type="date" id="nextVisitDate">
+    </div>
+
+    <div class="result" id="resultArea"></div>
+
+    <div class="info" id="infoArea">
+      💊 需要药粒数 = 开药天数 × 每日剂量<br>
+      📦 盒数向上取整<br>
+      🗓️ 勾选"问诊当天服药"：首次当天开始吃新药，覆盖天数-1
+    </div>
+  </div>
+
+  <script>
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('visitDate').value = today;
+    document.getElementById('nextVisitDate').value = today;
+
+    let currentMode = 'by-days';
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMode = btn.dataset.mode;
+        document.getElementById('daysInputGroup').style.display = currentMode === 'by-days' ? 'block' : 'none';
+        document.getElementById('nextDateInputGroup').style.display = currentMode === 'by-date' ? 'block' : 'none';
+        calculate();
+      });
+    });
+
+    const inputs = ['visitDate', 'remainingPills', 'dailyDose', 'pillsPerBox', 'maxDays', 'prescribeDays', 'nextVisitDate', 'takeOnVisitDay'];
+    inputs.forEach(id => {
+      document.getElementById(id).addEventListener('input', calculate);
+      document.getElementById(id).addEventListener('change', calculate);
+    });
+
+    // ============ 日期工具函数 ============
+    function createDate(dateStr) {
+      const parts = dateStr.split('-');
+      return { year: parseInt(parts[0]), month: parseInt(parts[1]) - 1, day: parseInt(parts[2]) };
+    }
+
+    function isLeapYear(year) {
+      return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function getDaysInMonth(year, month) {
+      const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if (month === 1 && isLeapYear(year)) return 29;
+      return daysInMonth[month];
+    }
+
+    function dateToDayOfYear(date) {
+      let dayOfYear = date.day;
+      for (let i = 0; i < date.month; i++) {
+        dayOfYear += getDaysInMonth(date.year, i);
+      }
+      return dayOfYear;
+    }
+
+    function daysBetween(start, end) {
+      if (start.year === end.year) {
+        return dateToDayOfYear(end) - dateToDayOfYear(start);
+      }
+      let days = 0;
+      for (let y = start.year; y < end.year; y++) {
+        days += isLeapYear(y) ? 366 : 365;
+      }
+      days = days - dateToDayOfYear(start) + dateToDayOfYear(end);
+      return days;
+    }
+
+    function addDays(date, days) {
+      let d = date.day + days;
+      let m = date.month;
+      let y = date.year;
+      while (d > getDaysInMonth(y, m)) {
+        d -= getDaysInMonth(y, m);
+        m++;
+        if (m > 11) { m = 0; y++; }
+      }
+      return { year: y, month: m, day: d };
+    }
+
+    function dateLessThan(d1, d2) {
+      if (d1.year !== d2.year) return d1.year < d2.year;
+      if (d1.month !== d2.month) return d1.month < d2.month;
+      return d1.day < d2.day;
+    }
+
+    function formatDate(date) {
+      return `${date.year}年${(date.month + 1).toString().padStart(2, '0')}月${date.day.toString().padStart(2, '0')}日`;
+    }
+
+    // ============ 计算函数 ============
+    function calculate() {
+      const visitDate = document.getElementById('visitDate').value;
+      const remainingPills = parseInt(document.getElementById('remainingPills').value) || 0;
+      const dailyDose = parseInt(document.getElementById('dailyDose').value) || 2;
+      const pillsPerBox = parseInt(document.getElementById('pillsPerBox').value) || 28;
+      const maxDays = parseInt(document.getElementById('maxDays').value) || 60;
+      const takeOnVisitDay = document.getElementById('takeOnVisitDay').checked;
+
+      if (!visitDate) return;
+
+      if (currentMode === 'by-days') {
+        calculateByDays(visitDate, remainingPills, dailyDose, pillsPerBox, maxDays, takeOnVisitDay);
+      } else {
+        calculateByDate(visitDate, remainingPills, dailyDose, pillsPerBox, maxDays, takeOnVisitDay);
+      }
+    }
+
+    function calculateByDays(visitDate, remainingPills, dailyDose, pillsPerBox, maxDays, takeOnVisitDay) {
+      const prescribeDays = parseInt(document.getElementById('prescribeDays').value);
+      if (!prescribeDays || prescribeDays <= 0) {
+        document.getElementById('resultArea').innerHTML = '<div class="result-section"><div class="result-item"><span class="result-label">请输入开药天数</span></div></div>';
+        return;
+      }
+
+      const startDate = createDate(visitDate);
+      const pillsNeeded = prescribeDays * dailyDose;
+      const boxesNeeded = Math.ceil(pillsNeeded / pillsPerBox);
+      const actualPills = boxesNeeded * pillsPerBox;
+      const newPillsDays = Math.floor(actualPills / dailyDose);
+
+      // 下次开药建议计算
+      const totalPillsWithRemaining = actualPills + remainingPills;
+      let totalDays = Math.floor(totalPillsWithRemaining / dailyDose);
+
+      // 勾选当日服药时，总计可吃天数减1
+      if (takeOnVisitDay) {
+        totalDays = totalDays - 1;
+      }
+
+      const bestDate = addDays(startDate, totalDays);
+
+      let html = `
+        <div class="result-section">
+          <div class="result-title">本次开药情况</div>
+          <div class="result-item">
+            <span class="result-label">需要药粒数</span>
+            <span class="result-value">${pillsNeeded} 粒</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">需要盒数</span>
+            <span class="result-value">${boxesNeeded} 盒</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">实际开药粒数</span>
+            <span class="result-value">${actualPills} 粒</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">新药可吃天数</span>
+            <span class="result-value">${newPillsDays} 天</span>
+          </div>
+        </div>
+      `;
+
+      html += `
+        <div class="result-section">
+          <div class="result-title">下次开药建议</div>
+          <div class="result-item">
+            <span class="result-label">开药后总药量</span>
+            <span class="result-value">${totalPillsWithRemaining} 粒</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">总计可吃天数</span>
+            <span class="result-value">${totalDays} 天</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">最佳开药日期</span>
+            <span class="result-value success">${formatDate(bestDate)}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('resultArea').innerHTML = html;
+    }
+
+    function calculateByDate(visitDate, remainingPills, dailyDose, pillsPerBox, maxDays, takeOnVisitDay) {
+      const nextVisitDateStr = document.getElementById('nextVisitDate').value;
+      if (!nextVisitDateStr) {
+        document.getElementById('resultArea').innerHTML = '<div class="result-section"><div class="result-item"><span class="result-label">请输入计划下次问诊日期</span></div></div>';
+        return;
+      }
+
+      const startDate = createDate(visitDate);
+      const endDate = createDate(nextVisitDateStr);
+      const totalIntervalDays = daysBetween(startDate, endDate);
+
+      if (totalIntervalDays <= 0) {
+        document.getElementById('resultArea').innerHTML = '<div class="result-section"><div class="result-item"><span class="result-label">下次问诊日期需晚于本次问诊</span></div></div>';
+        return;
+      }
+
+      const plan = buildPlan(startDate, endDate, remainingPills, dailyDose, pillsPerBox, maxDays, takeOnVisitDay);
+
+      let html = `
+        <div class="result-section">
+          <div class="result-title">开药计划</div>
+          <div class="result-item">
+            <span class="result-label">总间隔天数</span>
+            <span class="result-value">${totalIntervalDays} 天</span>
+          </div>
+          <div class="result-item">
+            <span class="result-label">需要开药次数</span>
+            <span class="result-value highlight">${plan.length} 次</span>
+          </div>
+        </div>
+        <div class="result-section">
+          <div class="result-title">详细计划</div>
+          <div class="timeline">
+      `;
+
+      plan.forEach((item, idx) => {
+        const isLast = idx === plan.length - 1;
+        html += `
+          <div class="timeline-item">
+            <div class="timeline-badge ${isLast ? 'last' : ''}">${idx + 1}</div>
+            <div class="timeline-content">
+              <div class="timeline-date">第 ${idx + 1} 次：${formatDate(item.date)} 开药 ${item.days} 天</div>
+              <div class="timeline-detail">
+                ${item.pills} 粒 → ${item.boxes} 盒 | 覆盖到 ${formatDate(item.endDate)}${isLast ? '（问诊）' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div></div>';
+
+      // 检查覆盖情况
+      const last = plan[plan.length - 1];
+      if (last && dateLessThan(last.endDate, endDate)) {
+        const diff = daysBetween(last.endDate, endDate);
+        if (diff > 0) {
+          html += `<div class="timeline-warning">⚠️ 药覆盖到（${formatDate(last.endDate)}）到问诊日（${formatDate(endDate)}）还有 ${diff} 天，需注意剩余药量</div>`;
+        }
+      }
+
+      document.getElementById('resultArea').innerHTML = html;
+    }
+
+    function buildPlan(startDate, endDate, initialRemaining, dailyDose, pillsPerBox, maxDays, takeOnVisitDay) {
+      const plan = [];
+      let currentDate = { ...startDate };
+      let remaining = initialRemaining;
+
+      while (dateLessThan(currentDate, endDate)) {
+        const daysUntilEnd = daysBetween(currentDate, endDate);
+        const daysFromRemaining = Math.floor(remaining / dailyDose);
+
+        if (daysFromRemaining >= daysUntilEnd) {
+          break;
+        }
+
+        // 开药天数计算
+        let daysToPrescribe;
+        if (plan.length === 0) {
+          // 首次开药 = 最长开药天数
+          daysToPrescribe = maxDays;
+        } else {
+          // 后续开药 = 剩余间隔天数 - 之前剩余药可覆盖天数
+          daysToPrescribe = daysUntilEnd - daysFromRemaining;
+          daysToPrescribe = Math.min(daysToPrescribe, maxDays);
+        }
+        daysToPrescribe = Math.max(1, daysToPrescribe);
+
+        const pillsNeeded = daysToPrescribe * dailyDose;
+        const boxesNeeded = Math.ceil(pillsNeeded / pillsPerBox);
+        const actualPills = boxesNeeded * pillsPerBox;
+        const actualDays = Math.floor(actualPills / dailyDose);
+
+        // 覆盖天数 = 新开药可吃天数 + 剩余药可吃天数（仅首次）
+        let coverageDays = actualDays;
+        if (plan.length === 0 && remaining > 0) {
+          coverageDays = actualDays + daysFromRemaining;
+        }
+        // 勾选当日服药：首次覆盖天数-1
+        if (takeOnVisitDay && plan.length === 0) {
+          coverageDays = coverageDays - 1;
+        }
+
+        const coverageEndDate = addDays(currentDate, coverageDays);
+
+        // 首次开药后剩余药 = (新开药 + 初始剩余药) - 覆盖天数消耗的药量
+        if (plan.length === 0) {
+          remaining = (actualPills + initialRemaining) - (coverageDays * dailyDose);
+          if (remaining < 0) remaining = 0;
+        } else {
+          // 非首次：当天吃完前一批，第二天开始吃新药，剩余药被消耗
+          remaining = 0;
+        }
+
+        plan.push({
+          date: { ...currentDate },
+          days: daysToPrescribe,
+          pills: pillsNeeded,
+          boxes: boxesNeeded,
+          endDate: coverageEndDate
+        });
+
+        if (!dateLessThan(coverageEndDate, endDate)) {
+          break;
+        }
+
+        currentDate = { ...coverageEndDate };
+      }
+
+      return plan;
+    }
+
+    calculate();
+  </script>
+</body>
+</html>
