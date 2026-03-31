@@ -1,0 +1,22 @@
+{
+  "name": "开药计算器",
+  "short_name": "开药计算",
+  "description": "帮助医生计算开药数量的工具",
+  "start_url": "./开药计算器_v2.0.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a90d9",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
