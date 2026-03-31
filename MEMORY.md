@@ -65,3 +65,16 @@
 - 使用 `toISOString().split('T')[0]` 获取当天日期字符串，兼容 input[type="date"] 默认值
 - checkbox 的 change 事件需同时监听 `input` 和 `change` 事件以确保所有浏览器触发
 - 纯原生 HTML/CSS/JS，**无任何外部依赖**
+
+### PWA 配置
+
+- `manifest.json`：定义应用名称、图标、显示模式（standalone）
+- `service-worker.js`：缓存 index.html 和图标，实现离线可用
+- iOS Safari 需通过"添加到主屏幕"安装，不支持自动安装
+
+## 项目当前状态
+
+- **版本**：v2.0
+- **状态**：功能已完成，托管于 GitHub Pages
+- **访问地址**：https://jiangweier.github.io/kaiyao_calculator/
+- **主文件**：`index.html`（非中文名以兼容 iOS）
